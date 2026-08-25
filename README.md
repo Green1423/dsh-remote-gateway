@@ -134,7 +134,9 @@ npm run patch-client        # 手动应用/校验补丁（幂等；已打过则�
 npm run dev                 # 开发循环每次同步后自动重新应用
 ```
 
-注意：全局 `@deepseek-ai/dsh` 升级（`npm i -g`）会覆盖该补丁，重新运行 `npm run patch-client` 即可。未打补丁时网关其余功能不受影响，仅远程设置页保持不可用。
+3. **运行时兜底（始终生效，无需写权限）**：本插件的客户端（`lib/client.js`）在带网关标记的页面里把共享 settings mirror 从 memory 模式**在线升级为 host 模式**（`settingsScope` 服务的 `mirror.persistence`），并立即发起一次 `settings.describe` 读取真实设置文档；同时把 `ctx.connection.isLoopback` 置为 `true`，使之后绑定的设置作用域同样走 host 持久化。这是纯浏览器端行为，随 `lib/client.js` 按请求实时下发，**任何环境都无需重启、无需修改 Harness 安装**（即使上面的补丁因权限/路径原因未能应用，设置页依然可用）。
+
+注意：全局 `@deepseek-ai/dsh` 升级（`npm i -g`）会覆盖补丁，重新运行 `npm run patch-client` 即可；未打补丁时第 3 层（运行时升级）仍保证远程设置页可用。
 
 ## 与其他插件的兼容性
 
