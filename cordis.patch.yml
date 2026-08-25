@@ -1,4 +1,4 @@
-# dsh-web-auth-gateway bundle patch: inserts the remote-login gateway into a
+# dsh-remote-gateway bundle patch: inserts the remote-login gateway into a
 # profile's layer stack. Applied when a profile lists this bundle; the row
 # references the package by name so Node resolution finds the installed code.
 #
@@ -11,8 +11,8 @@
 # (defense in depth). HTTPS must be enabled with a certificate — generate one
 # with `dsh-web-auth gen-cert --enable`.
 - insert:
-    - id: web-auth-gateway
-      name: 'dsh-web-auth-gateway'
+    - id: remote-gateway
+      name: 'dsh-remote-gateway'
       config:
         host: 0.0.0.0
         httpEnabled: false

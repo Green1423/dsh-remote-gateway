@@ -1,4 +1,4 @@
-# dsh-web-auth-gateway
+# dsh-remote-gateway
 
 为 DeepSeek Harness 的 Web 界面提供远程登录网关：账号密码登录页、24 小时会话、支持 `0.0.0.0` 绑定。
 
@@ -35,7 +35,7 @@ dsh plugin --profile web add file:<本仓库路径>
 
 ## 开发：改动自动打包
 
-仓库根目录运行 `npm run dev` 即可进入开发循环：**每次保存改动都会自动同步到 profile 的安装拷贝**（`lib/`、`package.json`、`cordis.patch.yml` 直接镜像到 `~/.dsh/profiles/web/node_modules/dsh-web-auth-gateway`；首次未安装或改过 `package.json` 时先执行 `dsh plugin --profile web add file:<本仓库>` 完成安装/调和）。
+仓库根目录运行 `npm run dev` 即可进入开发循环：**每次保存改动都会自动同步到 profile 的安装拷贝**（`lib/`、`package.json`、`cordis.patch.yml` 直接镜像到 `~/.dsh/profiles/web/node_modules/dsh-remote-gateway`；首次未安装或改过 `package.json` 时先执行 `dsh plugin --profile web add file:<本仓库>` 完成安装/调和）。
 
 ```bash
 npm run dev            # 首次未安装会自动安装；之后监视变更并自动同步
@@ -54,7 +54,7 @@ npm run dev -- --profile web   # 指定 profile（默认 web）
 在 `~/.dsh/profiles/web/cordis.patch.yml` 中覆盖配置：
 
 ```yaml
-- id: web-auth-gateway
+- id: remote-gateway
   config:
     host: 0.0.0.0
     port: 8443

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// dsh-web-auth-gateway dev watcher — "每次更改都自动打包".
+// dsh-remote-gateway dev watcher — "每次更改都自动打包".
 //
 // Watches this checkout (lib/**, package.json, cordis.patch.yml) and on every
 // change re-syncs the plugin into the web profile so a running harness picks
@@ -149,7 +149,7 @@ function report(changed) {
 }
 
 // ── main ────────────────────────────────────────────────────────────────────
-log(`dsh-web-auth-gateway dev watcher — profile: ${profile}`);
+log(`dsh-remote-gateway dev watcher — profile: ${profile}`);
 log(`仓库：${root}`);
 if (once) {
   log("--once：执行一次打包后退出…");
