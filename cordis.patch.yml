@@ -1,0 +1,18 @@
+# dsh-web-auth-gateway bundle patch: inserts the remote-login gateway into a
+# profile's layer stack. Applied when a profile lists this bundle; the row
+# references the package by name so Node resolution finds the installed code.
+#
+# The gateway runs its OWN HTTP(S) server (default 0.0.0.0:8443, HTTPS-only)
+# in front of the harness webServer: it serves the login page, verifies
+# credentials from a YAML config file, issues a 24-hour session cookie, and
+# reverse-proxies HTTP and WebSocket traffic to the internal web server with
+# the Host/Origin headers rewritten to loopback so the harness's own /api
+# trust fence passes. The harness webServer itself stays bound to 127.0.0.1
+# (defense in depth). HTTPS must be enabled with a certificate — generate one
+# with `dsh-web-auth gen-cert --enable`.
+- insert:
+    - id: web-auth-gateway
+      name: 'dsh-web-auth-gateway'
+      config:
+        host: 0.0.0.0
+        httpEnabled: false

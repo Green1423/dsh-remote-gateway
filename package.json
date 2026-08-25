@@ -1,0 +1,61 @@
+{
+  "name": "dsh-remote-gateway",
+  "version": "1.0.0",
+  "description": "Remote login gateway for the DeepSeek Harness web UI: username/password login page, 24-hour sessions, 0.0.0.0 bind",
+  "type": "module",
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "bin": {
+    "dsh-web-auth": "./lib/cli.js"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "node test/smoke.mjs"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./lib/plugin.js": "./lib/plugin.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./lib/plugin-v2.js": "./lib/plugin-v2.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime"
+      ],
+      "platform": "web"
+    },
+    "plugin": {
+      "schemaVersion": 1,
+      "displayName": {
+        "zh-CN": "\u767b\u5f55\u7f51\u5173",
+        "en": "Auth Gateway"
+      },
+      "summary": {
+        "zh-CN": "\u8fdc\u7a0b\u767b\u5f55\u7f51\u5173\uff1a\u8d26\u53f7\u5bc6\u7801\u767b\u5f55\u300124 \u5c0f\u65f6\u4f1a\u8bdd\u3001\u4ec5 HTTPS\u3001\u914d\u7f6e\u6587\u4ef6\u67e5\u770b\u3002",
+        "en": "Remote login gateway: username/password login, 24h sessions, HTTPS-only, config viewer."
+      },
+      "category": "auth"
+    },
+    "pluginManager": {
+      "group": "auth"
+    }
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.0",
+    "@deepseek-ai/schemastery": "^3.18.0"
+  },
+  "license": "MIT"
+}
