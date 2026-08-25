@@ -18,7 +18,11 @@
 //      plugin is missing from the profile, or package.json changed (keeps
 //      the dependency row, bundle list and lockfile reconciled);
 //   2. mirrors this checkout's runtime files (lib/**, package.json,
-//      cordis.patch.yml, README.md) straight into the installed copy.
+//      cordis.patch.yml, README.md) straight into the installed copy;
+//   3. re-applies scripts/patch-dsh-client.mjs, so the served
+//      dsh-client-connection bundle keeps honoring the gateway's
+//      __DSH_AUTH_GATEWAY__ marker (the remote-settings fix; DSH upgrades
+//      wipe it, hence the re-apply on every pack).
 // The harness serves client plugins per-request with a content-hash rev and
 // hot-reloads server entries via HMR, so a synced edit is picked up by the
 // running GUI immediately (refresh the page for the browser half).
@@ -125,6 +129,25 @@ function syncInstalledCopy() {
 }
 
 /**
+ * Re-apply the loopback-trust patch to the served dsh-client-connection
+ * bundle (see scripts/patch-dsh-client.mjs). The harness reads that bundle
+ * from node_modules per request with a content-hash rev, so a patched file is
+ * picked up on the next page refresh — no restart needed. DSH upgrades wipe
+ * the patch, hence the re-apply on every pack. Non-fatal: the gateway keeps
+ * working, only the remote settings pages stay disabled.
+ */
+async function patchClientBundle() {
+  const script = path.join(root, "scripts", "patch-dsh-client.mjs");
+  if (!existsSync(script)) return true;
+  const code = await runChild(process.execPath, [script]);
+  if (code !== 0) {
+    log("警告：dsh-client-connection 补丁未应用——远程设置页（settings are unavailable in this browser）不会修复，详情见上方输出");
+    return false;
+  }
+  return true;
+}
+
+/**
  * The pack step: install/reconcile when needed, then always mirror the
  * checkout into the profile's copy (hoisted linker installs `file:` deps as
  * a copy, so plain `pnpm add` alone never propagates content changes).
@@ -137,7 +160,9 @@ async function pack(changed = []) {
   } else {
     log("已安装且 package.json 未变：跳过 pnpm add，直接同步文件拷贝…");
   }
-  return syncInstalledCopy();
+  const synced = syncInstalledCopy();
+  if (synced) await patchClientBundle();
+  return synced;
 }
 
 /** Print what changed and what it takes for it to show up in a running GUI. */

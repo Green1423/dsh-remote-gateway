@@ -78,12 +78,14 @@ CLI 管理：
 ```bash
 dsh-web-auth init                        # 创建文件并生成随机密码（会打印一次）
 dsh-web-auth init --username admin --password 'S3cret!' --force
-dsh-web-auth add-user --username bob --password 'p@ss'
-dsh-web-auth add-user --username bob --password-hash sha256:$(dsh-web-auth hash 'p@ss' | cut -d: -f2)
-dsh-web-auth remove-user --username bob
+dsh-web-auth set-user --password 'S3cret!'                      # 修改当前账号的密码
+dsh-web-auth set-user --username root --password 'S3cret!'      # 当前账号改名 + 改密码
+dsh-web-auth set-user --password-hash sha256:$(dsh-web-auth hash 'p@ss' | cut -d: -f2)
 dsh-web-auth list
 dsh-web-auth hash 'p@ss'                 # 生成 sha256 哈希
 ```
+
+`set-user` 修改**当前账号**（`admin`，或文件中第一个账号）：`--username` 改名、`--password` / `--password-hash` 改密码（哈希优先，且会清掉旧明文）、`--work-dir` 改工作目录限制，至少指定一项。CLI **不再提供添加/删除账号**（`add-user` / `remove-user` 已移除）——账号表的增删请使用齿轮菜单里的"编辑配置文件（web-auth.yaml）"，或直接编辑 YAML 文件。
 
 ## 登录行为
 
@@ -114,10 +116,25 @@ dsh-web-auth hash 'p@ss'                 # 生成 sha256 哈希
 
 - **账号管理**：修改登录用户名与密码（密码为 write-only，留空 = 保持原密码）；`admin` 账号**必须保留**；
   - 每个账号可设置 `workDir`（工作目录限制）——该账号创建会话时会被强制落在该目录（`session.create` 的 `workspaceId` 会被替换为 `cwd=workDir`）；每次请求实时读取配置，改完立即生效；
+  - 添加/删除账号请用"编辑配置文件（web-auth.yaml）"（CLI 只提供 `set-user` 修改当前账号）；
 - **修改 HTTPS 端口**：保存后网关即时重新绑定，无需重启（保存在 `gateway.httpsPort`）；
 - **信任域**：逗号分隔的受信任域名列表，默认 `*`（不限制）。保存后立即生效；限制后仅匹配的 `Host`/`Origin` 可访问网关（防 DNS 重绑定）。保存在 `gateway.trustedDomains`；
 - **配置文件**：浮窗内"编辑配置文件（web-auth.yaml）"展开**网页内编辑器**——可直接修改并保存整个文件（保存前会校验 YAML 合法性、`users` 列表与 admin 账号存在性，校验失败不落盘；保存后立即对登录生效）。编辑器支持自动缩进：`Tab` 插入 2 空格，`Enter` 延续当前行缩进（行尾为 `:` 时再加 2 格）；
 - **退出登录**：立即注销当前会话。
+
+## 远程设置页修复（settings are unavailable in this browser）
+
+Harness 的设置 UI 以浏览器侧的 `ctx.connection.isLoopback` 决定是否启用：远程地址（非回环）访问时，模型设置页会报 **"加载提供方目录失败: settings are unavailable in this browser"**。本插件通过两层机制修复：
+
+1. 网关把每个经它代理的 HTML 页面都注入 `window.__DSH_AUTH_GATEWAY__` 标记——脚本插在 `<head>` 之后、早于 Harness 的任何引导脚本执行；
+2. `scripts/patch-dsh-client.mjs` 对 Harness **实际下发**的 `@deepseek-ai/dsh-client-connection` 客户端包做幂等补丁，让 `isLoopback` 在该标记存在时也为 `true`（Harness 每次请求都从 node_modules 现读该包并以内容哈希做版本号，改完**刷新页面**即生效，无需重启）。设置页的 RPC 走网关注入的 `/api` 通道，`Host`/`Origin` 已被网关重写为回环地址，因此 Harness 的信任围栏正常放行。
+
+```bash
+npm run patch-client        # 手动应用/校验补丁（幂等；已打过则直接跳过）
+npm run dev                 # 开发循环每次同步后自动重新应用
+```
+
+注意：全局 `@deepseek-ai/dsh` 升级（`npm i -g`）会覆盖该补丁，重新运行 `npm run patch-client` 即可。未打补丁时网关其余功能不受影响，仅远程设置页保持不可用。
 
 ## 与其他插件的兼容性
 

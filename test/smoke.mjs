@@ -2,10 +2,12 @@
 // exercises the gateway against a fake upstream HTTP/WebSocket server.
 import { createServer } from "node:http";
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { connect as netConnect } from "node:net";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import https from "node:https";
 import { WebSocket, WebSocketServer } from "ws";
@@ -46,6 +48,63 @@ const ok = (name) => { passed++; console.log(`  ✓ ${name}`); };
   assert.throws(() => validateUsersList([{ username: "admin" }, { username: "admin" }]), /duplicate/);
   assert.throws(() => validateUsersList([{ username: "" }]), /non-empty/);
   ok("account list validation (admin required, unique, non-empty)");
+}
+
+// ── 1b. CLI account editing (set-user; add-user/remove-user removed) ────────
+{
+  const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "lib", "cli.js");
+  const dir = mkdtempSync(path.join(tmpdir(), "dsh-cli-"));
+  const run = (args) => spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, DSH_HOME: dir } });
+  const credsFile = path.join(dir, "web-auth.yaml");
+
+  let r = run(["init", "--username", "admin", "--password", "pw1"]);
+  assert.equal(r.status, 0, r.stderr);
+  let doc = loadUsers(credsFile);
+  assert.equal(verifyUser(doc.users, "admin", "pw1"), true);
+
+  // set-user: password-only change
+  r = run(["set-user", "--password", "pw2"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /admin/);
+  doc = loadUsers(credsFile);
+  assert.equal(verifyUser(doc.users, "admin", "pw1"), false);
+  assert.equal(verifyUser(doc.users, "admin", "pw2"), true);
+  ok("CLI set-user changes the current account's password");
+
+  // set-user: rename + password + workDir in one call
+  r = run(["set-user", "--username", "root", "--password", "pw3", "--work-dir", "/srv/x"]);
+  assert.equal(r.status, 0, r.stderr);
+  doc = loadUsers(credsFile);
+  assert.equal(verifyUser(doc.users, "root", "pw3"), true);
+  assert.equal(verifyUser(doc.users, "admin", "pw2"), false);
+  assert.equal(doc.users[0].workDir, "/srv/x");
+  ok("CLI set-user renames the current account and sets workDir");
+
+  // set-user: --password-hash wins and drops the stale plaintext
+  const hex = createHash("sha256").update("hunter2").digest("hex");
+  r = run(["set-user", "--password", "ignored", "--password-hash", `sha256:${hex}`]);
+  assert.equal(r.status, 0, r.stderr);
+  doc = loadUsers(credsFile);
+  assert.equal(verifyUser(doc.users, "root", "hunter2"), true);
+  assert.equal(verifyUser(doc.users, "root", "ignored"), false);
+  assert.equal(doc.users[0].passwordHash, `sha256:${hex}`);
+  assert.equal(doc.users[0].password, undefined);
+  ok("CLI set-user accepts a sha256 hash (plaintext dropped)");
+
+  // invalid hash format → rejected before any write
+  r = run(["set-user", "--password-hash", "nope"]);
+  assert.equal(r.status, 1);
+  doc = loadUsers(credsFile);
+  assert.equal(verifyUser(doc.users, "root", "hunter2"), true);
+  // nothing to change → rejected
+  r = run(["set-user"]);
+  assert.equal(r.status, 1);
+  // add-user / remove-user are gone: unknown command → usage, exit 2
+  for (const cmd of ["add-user", "remove-user"]) {
+    r = run([cmd, "--username", "bob", "--password", "x"]);
+    assert.equal(r.status, 2, `${cmd} must no longer exist`);
+  }
+  ok("CLI rejects bad hash / empty set-user; add-user & remove-user removed");
 }
 
 // ── 2. session store TTL ────────────────────────────────────────────────────
