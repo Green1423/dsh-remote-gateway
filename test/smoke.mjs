@@ -249,6 +249,7 @@ const ok = (name) => { passed++; console.log(`  ✓ ${name}`); };
     "    workDir: /srv/restricted",
     "",
   ].join("\n"));
+  const dlRoot = mkdtempSync(path.join(tmpdir(), "dsh-dl-"));
   const gateway = createGateway({
     logger: { info: () => {} },
     credentialsFile: credsFile,
@@ -256,6 +257,8 @@ const ok = (name) => { passed++; console.log(`  ✓ ${name}`); };
     throttle,
     getUser: (username) => (username === "restricted" ? { username, workDir: "/srv/restricted" } : undefined),
     getUpstream: () => ({ host: "127.0.0.1", port: upstreamPort }),
+    // Produced-file downloads resolve against a scratch root in this suite.
+    downloadRootFor: () => dlRoot,
   });
   const addr = await gateway.listen("127.0.0.1", 0);
   const base = `http://127.0.0.1:${addr.port}`;
@@ -505,10 +508,37 @@ const ok = (name) => { passed++; console.log(`  ✓ ${name}`); };
   assert.equal(settings.value.httpsPort, 8443);
   assert.deepEqual(settings.value.trustedDomains, ["*"]);
   ok("settings endpoint reports the primary account and gateway defaults");
-
   res = await fetch(`${base}/dsh-gateway/config/settings`);
   assert.equal(res.status, 401);
   ok("settings endpoint rejects unauthenticated access");
+
+  // ── produced-file download endpoint (remote counterpart of host.openPath) ─
+  const dlFile = path.join(dlRoot, "report.txt");
+  writeFileSync(dlFile, "hello produced file\n");
+  // unauthenticated → 401
+  res = await fetch(`${base}/dsh-gateway/download?path=${encodeURIComponent(dlFile)}`);
+  assert.equal(res.status, 401);
+  // authenticated → 200 attachment with the file body
+  res = await fetch(`${base}/dsh-gateway/download?path=${encodeURIComponent(dlFile)}`, { headers: { cookie: `dsh_session=${token}` } });
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-disposition"), /attachment; filename="report\.txt"/);
+  assert.equal(await res.text(), "hello produced file\n");
+  // directory → 403
+  res = await fetch(`${base}/dsh-gateway/download?path=${encodeURIComponent(dlRoot)}`, { headers: { cookie: `dsh_session=${token}` } });
+  assert.equal(res.status, 403);
+  // outside the download root → 403 (realpath-checked, symlinks cannot escape)
+  res = await fetch(`${base}/dsh-gateway/download?path=${encodeURIComponent(credsFile)}`, { headers: { cookie: `dsh_session=${token}` } });
+  assert.equal(res.status, 403);
+  // missing file → 404
+  res = await fetch(`${base}/dsh-gateway/download?path=${encodeURIComponent(path.join(dlRoot, "nope.txt"))}`, { headers: { cookie: `dsh_session=${token}` } });
+  assert.equal(res.status, 404);
+  // relative path → 400
+  res = await fetch(`${base}/dsh-gateway/download?path=relative.txt`, { headers: { cookie: `dsh_session=${token}` } });
+  assert.equal(res.status, 400);
+  // non-GET → 405
+  res = await fetch(`${base}/dsh-gateway/download?path=${encodeURIComponent(dlFile)}`, { method: "POST", headers: { cookie: `dsh_session=${token}` } });
+  assert.equal(res.status, 405);
+  ok("produced-file download endpoint (auth, root bounds, methods)");
 
   // invalid trusted domains → 400, nothing written
   const settingsBefore = readFileSync(credsFile, "utf8");
