@@ -351,7 +351,10 @@ const ok = (name) => { passed++; console.log(`  ✓ ${name}`); };
   const html = await res.text();
   assert.match(html, /hello harness/);
   assert.match(html, /__DSH_AUTH_GATEWAY__/);
-  ok("authenticated page request reaches upstream UI with gateway marker");
+  // proxied HTML is served no-cache so a browser never pins a stale
+  // client-bundle rev (the harness sends no cache headers of its own)
+  assert.match(res.headers.get("cache-control") ?? "", /no-cache/);
+  ok("authenticated page request reaches upstream UI with gateway marker (html no-cache)");
 
   // per-account workDir restriction: session.create is rewritten for a
   // restricted account (workspaceId replaced by cwd)
