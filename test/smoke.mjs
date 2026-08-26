@@ -1,4 +1,4 @@
-// Standalone smoke test for dsh-remote-gateway (no harness needed):
+// Standalone smoke test for dsh-login-gateway (no harness needed):
 // exercises the gateway against a fake upstream HTTP/WebSocket server.
 import { createServer } from "node:http";
 import { createHash } from "node:crypto";

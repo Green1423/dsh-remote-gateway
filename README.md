@@ -19,7 +19,8 @@ Harness 的 Web 服务器刻意**拒绝 `--host 0.0.0.0`**（它会直接把远�
 ## 安装
 
 ```bash
-dsh plugin --profile web add github:Green1423/dsh-remote-gateway
+dsh plugin --profile web add github:Green1423/dsh-remote-gateway    # GitHub
+dsh plugin --profile web add dsh-login-gateway                      # npm（发布后）
 ```
 
 已提交官方插件列表（[awesome-dsh-plugin](https://awesome-dsh-plugin.com)）收录申请，提交材料见 [`official-registration/`](official-registration/SUBMIT.md)。

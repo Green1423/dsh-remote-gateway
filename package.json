@@ -1,5 +1,5 @@
 {
-  "name": "dsh-remote-gateway",
+  "name": "dsh-login-gateway",
   "version": "1.1.0",
   "description": "Remote login gateway for the DeepSeek Harness web UI: username/password login, 24-hour sessions, HTTPS with auto-generated certificates, HTTP/WebSocket reverse proxy to the loopback server, remote produced-file download",
   "type": "module",

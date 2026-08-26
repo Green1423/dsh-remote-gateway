@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// dsh-remote-gateway — apply the loopback-trust patch to the SERVED
+// dsh-login-gateway — apply the loopback-trust patch to the SERVED
 // @deepseek-ai/dsh-client-connection client bundle.
 //
 // Why: the harness computes ctx.connection.isLoopback from the page location,
