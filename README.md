@@ -22,6 +22,8 @@ Harness 的 Web 服务器刻意**拒绝 `--host 0.0.0.0`**（它会直接把远�
 dsh plugin --profile web add github:Green1423/dsh-remote-gateway
 ```
 
+已提交官方插件列表（[awesome-dsh-plugin](https://awesome-dsh-plugin.com)）收录申请，提交材料见 [`official-registration/`](official-registration/SUBMIT.md)。
+
 安装后 `dsh --profile web` 启动时网关随 Harness 一起启动。默认配置：
 
 | 配置项 | 默认值 | 说明 |

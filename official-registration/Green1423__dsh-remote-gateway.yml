@@ -1,0 +1,7 @@
+# PR payload — add to the awesome-dsh-plugin repo as data/plugins/Green1423__dsh-remote-gateway.yml
+url: https://github.com/Green1423/dsh-remote-gateway
+name: Green1423/dsh-remote-gateway
+category: remote
+description:
+  en: 'Remote login gateway for the DeepSeek Harness web UI: username/password login, 24-hour sessions, HTTPS with auto-generated certificates, and an HTTP/WebSocket reverse proxy to the loopback server.'
+  zh: 'DeepSeek Harness Web 界面远程登录网关：账号密码登录、24 小时会话、HTTPS 自动生成证书、HTTP/WebSocket 反向代理到回环服务。'
