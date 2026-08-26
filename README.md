@@ -19,7 +19,7 @@ Harness 的 Web 服务器刻意**拒绝 `--host 0.0.0.0`**（它会直接把远�
 ## 安装
 
 ```bash
-dsh plugin --profile web add file:<本仓库路径>
+dsh plugin --profile web add github:Green1423/dsh-remote-gateway
 ```
 
 安装后 `dsh --profile web` 启动时网关随 Harness 一起启动。默认配置：
