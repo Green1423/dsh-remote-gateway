@@ -97,7 +97,7 @@ dsh-web-auth hash 'p@ss'                 # 生成 sha256 哈希
 
 ## 安全说明
 
-- **远程访问请使用 HTTPS**：Harness 前端调用 `crypto.randomUUID()`，浏览器只在安全上下文（HTTPS 或 localhost）提供该 API——通过 `http://局域网IP:8080` 访问会报 `crypto.randomUUID is not a function`。为网关启用 TLS 即可解决：
+- **远程访问请使用 HTTPS**：Harness 前端调用 `crypto.randomUUID()`，浏览器只在安全上下文（HTTPS 或 localhost）提供该 API——通过 `http://局域网IP:8080` 访问会报 `crypto.randomUUID is not a function`。**HTTPS 默认开启**：首次运行会自动生成自签名证书（纯 Node 实现，SAN 自动含 localhost + 全部局域网 IP，有效期 10 年，保存在 `~/.dsh/web-auth-cert.pem` / `web-auth-key.pem`），随后访问 `https://<主机IP>:8443`（首次需在浏览器信任自签名证书）即可，无需任何手工步骤。需要自定义时仍可用 CLI：
   ```bash
   dsh-web-auth gen-cert --enable   # 生成自签名证书（SAN 自动含 localhost + 全部局域网 IP）并写入配置档
   # 重启 dsh web，然后访问 https://<主机IP>:8443（首次需在浏览器信任自签名证书）
@@ -160,8 +160,8 @@ Harness 的“产物”文件芯片点击后调用 `host.openPath`——在**服
 | --- | --- | --- |
 | `host` | `0.0.0.0` | 网关绑定地址 |
 | `httpEnabled` / `port` | `false` / `8080` | 明文 HTTP 监听（默认关闭，仅 HTTPS） |
-| `httpsEnabled` / `httpsPort` | `false` / `8443` | 启用 HTTPS 监听（`httpsPort` 会被凭据文件 `gateway.httpsPort` 覆盖） |
-| `httpsCertFile` / `httpsKeyFile` | `$DSH_HOME/web-auth-{cert,key}.pem` | TLS 证书/私钥 |
+| `httpsEnabled` / `httpsPort` | `true` / `8443` | 启用 HTTPS 监听（**默认开启**；`httpsPort` 会被凭据文件 `gateway.httpsPort` 覆盖） |
+| `httpsCertFile` / `httpsKeyFile` | `$DSH_HOME/web-auth-{cert,key}.pem` | TLS 证书/私钥（**首次运行自动生成自签名证书**，SAN 含 localhost 与全部局域网 IP；已有文件不会被覆盖） |
 | `credentialsFile` | `$DSH_HOME/web-auth.yaml` | 账号密码配置文件（含 `gateway:` 设置段） |
 | `trustedDomains` | `["*"]` | 信任域（Host/Origin 白名单）；`*` = 不限制，支持 `host`、`host:port`、`*.suffix`；被凭据文件 `gateway.trustedDomains` 覆盖 |
 | `sessionTtlHours` | `24` | 登录有效时长（小时） |

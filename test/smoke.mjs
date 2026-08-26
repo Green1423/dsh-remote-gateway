@@ -13,7 +13,7 @@ import https from "node:https";
 import { WebSocket, WebSocketServer } from "ws";
 import { createGateway, compileTrustedDomains, hostMatchesTrusted, parseTrustedDomainsList } from "../lib/gateway.js";
 import { SessionStore, LoginThrottle, loadUsers, verifyUser, validateUsersList } from "../lib/auth.js";
-import { generateSelfSignedCert } from "../lib/cert.js";
+import { generateSelfSignedCert, loadOrCreateTls } from "../lib/cert.js";
 
 let passed = 0;
 const ok = (name) => { passed++; console.log(`  ✓ ${name}`); };
@@ -638,6 +638,22 @@ const ok = (name) => { passed++; console.log(`  ✓ ${name}`); };
   await new Promise((resolve) => wss.close(resolve));
   sessions.close();
   throttle.close();
+}
+
+// ── 4b. first-run auto certificate ───────────────────────────────────────────
+{
+  const dir = mkdtempSync(path.join(tmpdir(), "dsh-tls-auto-"));
+  const certFile = path.join(dir, "cert.pem");
+  const keyFile = path.join(dir, "key.pem");
+  const first = loadOrCreateTls(certFile, keyFile);
+  assert.equal(first.created, true);
+  assert.match(String(first.cert), /BEGIN CERTIFICATE/);
+  assert.match(String(first.key), /BEGIN PRIVATE KEY/);
+  const second = loadOrCreateTls(certFile, keyFile);
+  assert.equal(second.created, false);
+  assert.equal(String(second.cert), String(first.cert)); // existing files are reused
+  assert.equal(String(second.key), String(first.key));
+  ok("first run generates a self-signed cert; later runs reuse it");
 }
 
 // ── 5. HTTPS listener (TLS) ─────────────────────────────────────────────────

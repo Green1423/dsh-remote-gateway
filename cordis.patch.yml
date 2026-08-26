@@ -8,8 +8,8 @@
 # reverse-proxies HTTP and WebSocket traffic to the internal web server with
 # the Host/Origin headers rewritten to loopback so the harness's own /api
 # trust fence passes. The harness webServer itself stays bound to 127.0.0.1
-# (defense in depth). HTTPS must be enabled with a certificate — generate one
-# with `dsh-web-auth gen-cert --enable`.
+# (defense in depth). HTTPS is on by default and a self-signed certificate is
+# generated automatically on first run (SANs: localhost + every LAN IPv4).
 - insert:
     - id: remote-gateway
       name: 'dsh-remote-gateway'
